@@ -12,7 +12,7 @@ fn main(){
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
         let input = input.trim();
-        match input.trim() {
+        match input {
             "quit" => break,
             "1" => str_method(),
             "2" => file_method(),
@@ -65,19 +65,23 @@ fn send(str:&str,flag:i32) -> Option<String>{
     
     //判断是否连接成功
     let mut stream =match TcpStream::connect(addr){
-        Ok(stream) => stream,
+        Ok(stream) => {
+            println!("连接成功");
+            stream
+        }
         Err(_) => return None,
     };
-
+    println!("{}",flag);
     if flag == 1 {
         let filename = str.trim();
-        stream.write(filename.as_bytes()).unwrap();
+        let content = String::from("1")+filename;
+        stream.write_all(content.as_bytes()).unwrap();
 
         stream.flush().unwrap();
         let mut buffer = Vec::new();
 
         stream.read_to_end(&mut buffer).unwrap();
-        //判断文件是否存在，依据是翻译的流是否为N
+        //判断文件是否存在，依据是接收的流是否为N
         if String::from_utf8_lossy(&mut buffer) == "N" {
             return Some("未查询到文件".to_string());
         }
@@ -87,9 +91,11 @@ fn send(str:&str,flag:i32) -> Option<String>{
         return Some("接收到文件，名字是received_file".to_string());
 
     }else{
-        stream.write(str.as_bytes()).unwrap();
+        let str = String::from("2")+str;
+        stream.write_all(str.as_bytes()).unwrap();
         stream.flush().unwrap();
-        let buffer = Vec::new();
+        let mut buffer = Vec::new();
+        stream.read_to_end(&mut buffer).unwrap();
         let received_string = String::from_utf8_lossy(&buffer);
         
         return Some(received_string.to_string());
